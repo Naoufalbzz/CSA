@@ -1,0 +1,7 @@
+- web 512mb
+- kali 2048mb
+- win10 2048mb
+- isprouter 256mb
+- dc 1024mb
+- companyrouter 2048mb
+- database 1024mb
