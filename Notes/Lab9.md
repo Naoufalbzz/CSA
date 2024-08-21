@@ -5,38 +5,55 @@
 ```yaml
 network:
   version: 2
-  renderer: NetworkManager
   ethernets:
     enp0s3:
-     addresses:
-       - 172.30.0.6/24
-     nameservers:
-        addresses:
-          - 172.30.0.4
+      addresses:
+        - 172.30.0.6/24
+      routes:
+        - to: default
+          via: 172.30.0.254
+      nameservers:
+          addresses: [172.30.0.4]
 ```
 - `sudo netplan apply`
-- DNS aanpassen
-- `sudo systemctl stop systemd-resolved`
-- `sudo systemctl disable systemd-resolved`
-- `sudo rm /etc/resolv.conf`
-- `sudo nano /etc/resolv.conf` 
-```yaml
+
+DNS aanpassen:
+- `sudo apt install resolvconf`
+```
+sudo systemctl start resolvconf.service
+sudo systemctl enable resolvconf.service
+sudo systemctl status resolvconf.service
+```
+- `sudo nano /etc/resolvconf/resolv.conf.d/head`
+```
+search insecure.cyb
 nameserver 172.30.0.4
-``` 
-- `sudo systemctl restart NetworkManager`
+```
+```
+sudo resolvconf --enable-updates
+sudo resolvconf -u
+```
+```
+sudo systemctl restart resolvconf.service
+sudo systemctl restart systemd-resolved.service
+```
+Bij booten VM altijd `sudo resolvconf -u`
+
 ### Wazuh installation
+- `sudo apt  install curl -y`
+- wazuh VM 4GB en 2 cores 
 - `curl -sO https://packages.wazuh.com/4.8/wazuh-install.sh && sudo bash ./wazuh-install.sh -a`
 ```   
 User: admin
-Password: c?VYhhC0b6w6*l.lk9KF62NSqClSF+BU
+Password: do3kA2?+1G6J702+IAq6k+oAFfCHkfQh
 ```
 - https://172.30.0.6:443
 
 
 ### Wazuh agents (web,database,companyrouter)
-
+Beste naar `su -` gaan:
 ```bash
-rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
+sudo rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
 ```
 
 ```bash
@@ -50,9 +67,10 @@ baseurl=https://packages.wazuh.com/4.x/yum/
 protect=1
 EOF
 ```
+Check goed dat enabled=1 anders aanpassen met sudo
 
 ```bash
-WAZUH_MANAGER="172.30.0.6" yum install wazuh-agent
+sudo WAZUH_MANAGER="172.30.0.6" yum install wazuh-agent
 ```
 
 ```bash
@@ -62,20 +80,105 @@ systemctl start wazuh-agent
 ```
 
 ```bash
-sed -i "s/^enabled=1/enabled=0/" /etc/yum.repos.d/wazuh.repo
+sudo sed -i "s/^enabled=1/enabled=0/" /etc/yum.repos.d/wazuh.repo
 ```
 - What is File Integrity Monitoring? Try to monitor the home directory of a user on a specific machine.
   - File Integrity Monitoring checks for changes to files and directories, such as modifications, deletions, or additions. It helps in detecting unauthorized changes and potential breaches
-- Demo: 
-  - `<directories realtime="yes">/root</directories>` toevoegen aan `/var/ossec/etc/ossec.conf` bij section `File integrity monitoring` onder `dir to check`
+
+### Demo FIM Linux: 
+
+- In `/var/ossec/etc/ossec.conf` line `<directories realtime="yes">/root</directories>` add :
+```
+  <!-- File integrity monitoring -->
+  <syscheck>
+    <disabled>no</disabled>
+
+    <!-- Frequency that syscheck is executed default every 12 hours -->
+    <frequency>60</frequency>
+
+    <scan_on_start>yes</scan_on_start>
+
+    <!-- Directories to check  (perform all possible verifications) -->
+    <directories>/etc,/usr/bin,/usr/sbin</directories>
+    <directories>/bin,/sbin,/boot</directories>
+    <directories realtime="yes">/root</directories>
+    <directories realtime="yes">/root</directories>
+    <!-- Files/directories to ignore -->
+    <ignore>/etc/mtab</ignore>
+```
   - `sudo systemctl restart wazuh-agent`
   - `sudo touch /root/test`
-  - Op wazuh server naar `https://172.30.0.6:443`->klik op web agent->klik op File integrity monitoring-> we zien dat er een file is aangemaakt
+```
+[vagrant@web ~]$ sudo touch /root/test
+[vagrant@web ~]$ sudo ls /root
+laatste  test  testten
+```
+  - Op wazuh server naar `https://172.30.0.6:443`->klik op `web agent`->klik op `File integrity monitoring`-> we zien dat er een file is aangemaakt
+![addfilewazuh](/img/addfilewazuh.png)
+![addfilewazuh2](/img/addfilewazuh2.png)
+### Demo FIM Windows:
+In `C:\Program Files (x86)\ossec-agent\ossec.conf` onderaan `<directories realtime="yes">%USERPROFILE%</directories>` toevoegen voor FIM op `C:\Users\vagrant`  : 
+```
+  <!-- File integrity monitoring -->
+  <syscheck>
+
+    <disabled>no</disabled>
+
+    <!-- Frequency that syscheck is executed default every 12 hours -->
+    <frequency>43200</frequency>
+
+    <!-- Default files to be monitored. -->
+    <directories recursion_level="0" restrict="regedit.exe$|system.ini$|win.ini$">%WINDIR%</directories>
+
+    <directories recursion_level="0" restrict="at.exe$|attrib.exe$|cacls.exe$|cmd.exe$|eventcreate.exe$|ftp.exe$|lsass.exe$|net.exe$|net1.exe$|netsh.exe$|reg.exe$|regedt32.exe|regsvr32.exe|runas.exe|sc.exe|schtasks.exe|sethc.exe|subst.exe$">%WINDIR%\SysNative</directories>
+    <directories recursion_level="0">%WINDIR%\SysNative\drivers\etc</directories>
+    <directories recursion_level="0" restrict="WMIC.exe$">%WINDIR%\SysNative\wbem</directories>
+    <directories recursion_level="0" restrict="powershell.exe$">%WINDIR%\SysNative\WindowsPowerShell\v1.0</directories>
+    <directories recursion_level="0" restrict="winrm.vbs$">%WINDIR%\SysNative</directories>
+
+    <!-- 32-bit programs. -->
+    <directories recursion_level="0" restrict="at.exe$|attrib.exe$|cacls.exe$|cmd.exe$|eventcreate.exe$|ftp.exe$|lsass.exe$|net.exe$|net1.exe$|netsh.exe$|reg.exe$|regedit.exe$|regedt32.exe$|regsvr32.exe$|runas.exe$|sc.exe$|schtasks.exe$|sethc.exe$|subst.exe$">%WINDIR%\System32</directories>
+    <directories recursion_level="0">%WINDIR%\System32\drivers\etc</directories>
+    <directories recursion_level="0" restrict="WMIC.exe$">%WINDIR%\System32\wbem</directories>
+    <directories recursion_level="0" restrict="powershell.exe$">%WINDIR%\System32\WindowsPowerShell\v1.0</directories>
+    <directories recursion_level="0" restrict="winrm.vbs$">%WINDIR%\System32</directories>
+
+    <directories realtime="yes">%PROGRAMDATA%\Microsoft\Windows\Start Menu\Programs\Startup</directories>
+    <directories realtime="yes">%USERPROFILE%</directories>
+```
+- `Restart-Service -Name wazuh`
+- In `C:\Users\vagrant` nieuwe file maken
+- Op wazuh server naar `https://172.30.0.6:443`->klik op `win10 agent`->klik op `File integrity monitoring`-> we zien dat er een file is aangemaakt
+![addfilewin10](/img/windowsaddfile.png)
+![addfile2win10](/img/windowsaddfile2.png)
+![verken](/img/verken.png)
 - What is meant with Regulatory Compliance? Give 2 frameworks that can be explored.
   - Ensures that systems and processes adhere to legal and regulatory requirements.
   - `GDPR` (General Data Protection Regulation): Europese wetgeving die gebaseerd op is het beschermen van de privacy een data van een individu.
   - `HIPAA` (Health Insurance Portability and Accountability Act): wetgeving die de gevoelige medische data van patiënten beschermt. 
   - `PCI-DSS` (Payment Card Industry Data Security Standard)
+
+## Demo Threat hunting
+- In `/var/ossec/etc/ossec.conf` die eerste syscheck block toevoegen:
+```
+  <!-- File integrity monitoring -->
+  <syscheck>
+    <directories>/home/*/.bash_history</directories>
+    <directories>/home/*/.zsh_history</directories>
+    <directories>/root/.bash_history</directories>
+    <directories>/root/.zsh_history</directories>
+    <frequency>60</frequency>
+    <alert_new_files>yes</alert_new_files>
+  </syscheck>
+  <syscheck>
+    <disabled>no</disabled>
+```
+- `sudo systemctl restart wazuh-agent`
+- `export PROMPT_COMMAND="history -a; $PROMPT_COMMAND"` (zodat commands direct naar .bash_history gaan)
+- `export HISTFILE=~/.bash_history`
+- `sudo date`
+- - Op wazuh server naar `https://172.30.0.6:443`->klik op `web agent`->klik op `Threat hunting`-> Onder `Security alerts` klikken op `Successful sudo to ROOT executed` -> je kan command zien
+![command](/img/command.png)
 ## Sysmon
 - Download Sysmon op win10
 - create `sysconfig.xml` in zelfde folder als Sysmon binaries:
@@ -123,7 +226,8 @@ sed -i "s/^enabled=1/enabled=0/" /etc/yum.repos.d/wazuh.repo
 - `cd C:\Users\vagrant\Downloads\mimikatz_trunk\x64`
 - `.\mimikatz.exe`
 - Open `Event viewer`->`Applications and Services Logs`-> `Microsoft`-> `Windows`->`Sysmon`->`Operational`
-- ![image](../img/sysmon.png)
+![sysmon](../img/sysmon.png)
+![eventview](../img/eventview.png)
 ### Configure win10 als wazuh agent
 ```powershell
 # Voorbeeld URL van de installer
@@ -176,6 +280,8 @@ Invoke-WebRequest -Uri $url -OutFile $output
 ```
 C:\Users\Walt\Downloads\mimikatz_trunk\x64\
 .\mimikatz.exe
+lsadump::lsa /inject
 ```
+![mimievent](../img/mimievent.png)
 ![sysmon2](/img/sysmon2.png)
 ![sysmon3](/img/sysmon3.png)

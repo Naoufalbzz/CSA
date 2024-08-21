@@ -162,6 +162,45 @@ playbook `drie.yml`:
         state: present
 ```
 4. Create a playbook (or ad-hoc command) that pulls all users that are allowed to log in on all Linux machines.
+```bash
+[vagrant@companyrouter ansible]$ ansible-playbook -i inventory vier.yml
+
+PLAY [Retrieve all users that can login on all linux machines] *********************************************************
+
+TASK [Gathering Facts] *************************************************************************************************
+ok: [172.30.20.8]
+
+TASK [Get allowed login users] *****************************************************************************************
+ok: [172.30.20.8]
+
+TASK [Display allowed login users] *************************************************************************************
+ok: [172.30.20.8] => {
+    "allowed_users.stdout_lines": [
+        "root",
+        "vagrant",
+        "ansible",
+        "walt"
+    ]
+}
+
+PLAY RECAP *************************************************************************************************************
+172.30.20.8                : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+```yml
+---
+- name: Retrieve all users that can login on all linux machines
+  hosts: web
+  become: yes
+  tasks:
+    - name: Get allowed login users
+      shell: "grep '/bin/bash' /etc/passwd | cut -d: -f1"
+      register: allowed_users
+      changed_when: false
+
+    - name: Display allowed login users
+      debug:
+        var: allowed_users.stdout_lines
+```
 5. Create a playbook (or ad-hoc command) that calculates the hash (md5sum for example) of a binary (for example the ss binary).
 ```bash
 [vagrant@companyrouter ansible]$ ansible-playbook -i inventory vijf.yml

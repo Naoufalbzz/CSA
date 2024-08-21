@@ -43,13 +43,26 @@ On ALL machines except isprouter:
 
 
 ## DNS op remoteclient
-- `sudo nano /etc/systemd/resolved.conf` (DNS regel)
-- `sudo systemctl stop systemd-resolved`
-- `sudo systemctl disable systemd-resolved`
-- `sudo apt -y install resolvconf`
-- `sudo nano /etc/resolvconf/resolv.conf.d/base`
-- `nameserver 172.30.0.4` toevoegen in file
-- `sudo resolvconf -u`
+- `sudo apt install resolvconf`
+```
+sudo systemctl start resolvconf.service
+sudo systemctl enable resolvconf.service
+sudo systemctl status resolvconf.service
+```
+- `sudo nano /etc/resolvconf/resolv.conf.d/head`
+```
+search insecure.cyb
+nameserver 172.30.0.4
+```
+```
+sudo resolvconf --enable-updates
+sudo resolvconf -u
+```
+```
+sudo systemctl restart resolvconf.service
+sudo systemctl restart systemd-resolved.service
+```
+Bij booten VM altijd `sudo resolvconf -u`
 
 #### zie lab10network.md voor routes
 - `cat /proc/sys/net/ipv4/ip_forward` check ipv4 forward
