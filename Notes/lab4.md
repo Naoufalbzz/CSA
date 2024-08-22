@@ -23,12 +23,21 @@
 - `sudo dnf copr enable @oisf/suricata-7.0`
 - `sudo dnf install suricata`
 - `/etc/suricata/suricata.yaml` aanpassen, `address-groups` en `af-packet` regel
-- `sudo suricata -c /etc/suricata/suricata.yaml -i eth0`
-- `tail -f /var/log/suricata/fast.log`
+- `sudo suricata -c /etc/suricata/suricata.yaml -i eth0` => STARTEN suricata
+- `sudo tail -f /var/log/suricata/fast.log`
 - in suricata.yaml rule-file regel aanpassen naar eigen file
-- in rule file:`alert icmp 192.168.100.102 any -> 172.30.20.8 any (msg:"ICMP Ping detected from red to database"; itype:8; sid:1000001; rev:1;)` rule voor icmp van red naar web te capturen
-- `alert icmp 192.168.100.102 any -> 172.30.0.5 any (msg:"ICMP Ping detected from red to database"; itype:8; sid:1000001; rev:1;)`
-
+```yml
+default-rule-path: /var/lib/suricata/rules                                                            
+rule-files:
+  - suricata2.rules
+```
+`/var/lib/suricata/rules/suricata2.rules`:
+```bash
+[vagrant@companyrouter ~]$ sudo cat /var/lib/suricata/rules/suricata2.rules
+alert icmp 192.168.100.102 any -> 172.30.0.15 any (msg:"ICMP Ping detected from red to database"; itype:8; sid:1000001; rev:1;)
+alert tcp 172.30.0.15 3306 -> 192.168.100.102 any (msg:"MySQL "; flow:established,to_client; dsize:<251; byte_test:1,<,0xfb,0,little; content:"|ff 15 04 23 32 38 30 30 30|"; offset:4; threshold: type threshold, track by_src, count 5, seconds 120; classtype:attempted-recon; sid:2010494; rev:5; metadata:created_at 2010_07_30, updated_at 2024_03_06;)
+alert tcp 172.30.20.8 any -> 192.168.100.102 any (msg:"ET ATTACK_RESPONSE Output of id command from HTTP server"; flow:established; content:"uid="; pcre:"/^\d+[^\r\n\s]+/R"; content:" gid="; within:5; pcre:"/^\d+[^\r\n\s]+/R"; content:" groups="; within:8; classtype:bad-unknown; sid:2019284; rev:3; metadata:created_at 2014_09_26, updated_at 2019_07_26;)
+```
 - Best Placement for IDS/IPS? 
   -  network router/gateway to monitor all incoming and outgoing traffic
 - What traffic can be seen?
@@ -38,10 +47,18 @@
   -  If rules for specific attacks or traffic types are not set up, those threats may pass undetected
   -  Incorrectly written rules might either fail to trigger on actual threats or generate false positives
 -  Verify that you see packets (in tcpdump) from red to the database. Try this by issuing a ping and by using the hydra mysql attack as seen previously. Are you able to see this traffic in tcpdump? What about a ping between the webserver and the database?
-   -  `sudo tcpdump -i eth0 host 192.168.100.102 and host 172.30.0.15`
-   -  yes, we can see the ping and hydra attack on tcpdump. 
-   -  We can't see the pings from web to db
--  What is the difference between the fast.log and the eve.json files?
+   *  `sudo tcpdump -i eth0 host 192.168.100.102 and host 172.30.0.15`
+   *  yes, we can see the ping and hydra attack on tcpdump. 
+    * ```bash
+      [vagrant@companyrouter ~]$ sudo tcpdump -i eth0 host 192.168.100.102 and host 172.30.0.15
+      dropped privs to tcpdump
+      tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+      listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+      21:22:34.394574 IP 192.168.100.102 > 172.30.0.15: ICMP echo request, id 25309, seq 1, length 64
+      21:22:34.394798 IP 172.30.0.15 > 192.168.100.102: ICMP echo reply, id 25309, seq 1, length 64
+      ```
+    * We can't see the pings from web to db
+- What is the difference between the fast.log and the eve.json files?
   - fast.log: A simple, line-by-line log of alerts, it’s quick to read and primarily used for speed and simplicity  
   - eve.json: A more detailed, structured log format in JSON, which can include various types of events beyond alerts, such as DNS requests, HTTP logs
 - Create a rule that alerts as soon as a ping is performed between two machines (for example red and database)
@@ -54,23 +71,39 @@
   - By default, Suricata is set up in IDS mode
 - What do you have to change to the setup to switch to the other (IPS or IDS)? You are free to experiment more and go all out with variables (for the networks) and rules. Make sure you can conceptually explain why certain rules would be useful and where (= from which subnet to which subnet) they should be applied?
 
-  - To switch to IPS mode, you need to configure Suricata to operate in line mode, which involves editing the configuration file:
-  
-     ```yaml
-      af-packet:
-        - interface: eth0
-          # Other settings...
-          # Enable inline mode
-          use-mmap: yes
-          defrag: yes
-          checksum-checks: yes
-          ips-mode: true
-      ```
-  - Set the default-action for rules to drop or reject for IPS in `/etc/suricata/suricata.yaml`
+  - To switch to IPS mode, you need to set copy-mode to ips
+Used commands:
 - `sudo nano /var/log/suricata/suricata.log`
-- `/etc/suricata/suricata.yaml`
-- `tail -f /var/log/suricata/fast.log`
+- `sudo tail -f /var/log/suricata/fast.log`
+- `sudo nano /etc/suricata/suricata.yaml`
 - `sudo nano /var/lib/suricata/rules/suricata2.rules`
+- `sudo systemctl restart suricata`
+
+Om Suricata te gebruiken:
+- `sudo suricata -c /etc/suricata/suricata.yaml -i eth0`
+- `sudo tail -f /var/log/suricata/fast.log` (ander venster)
+
+Ping van kali naar db:
+```bash
+08/21/2024-21:22:35.401205  [**] [1:1000001:1] ICMP Ping detected from red to database [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.100.102:8 -> 172.30.0.15:0
+```
+`Id` command op www.insecure.cyb/cmd:
+```bash
+08/21/2024-21:42:15.240672  [**] [1:2019284:3] ET ATTACK_RESPONSE Output of id command from HTTP server [**] [Classification: Potentially Bad Traffic] [Priority: 2] {TCP} 172.30.20.8:8000 -> 192.168.100.102:56096
+```
+hydra attack op database:
+```bash
+08/21/2024-21:48:16.244976  [**] [1:2010494:5] MySQL  [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 172.30.0.15:3306 -> 192.168.100.102:41172
+```
+
+
+
+
+
+
+
+
+
 - Traffic Patterns and Rule Placement:
 
   - Internal vs. External Traffic: Rules can be tailored based on whether traffic is internal (within the organization) or external (from outside). For example, blocking external IP ranges trying to access internal services.

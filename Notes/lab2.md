@@ -273,6 +273,13 @@
   * Web and the companyrouter would be in the DMZ
 - What could be a disadvantage of using network segmentation in this case? Tip: win10 <-> dc interaction.
   * Reduced Accessibility: For example, if win10 and dc are into different subnets, they might have difficulty interacting unless specific firewall rules or routing configurations are set up.
+
+DNS record toevoegen:
+- `sudo nano /etc/hosts`
+```
+172.30.20.8         www.insecure.cyb
+172.30.20.8:8000    www.insecure.cyb/cmd
+```
 ###### ip aanpassen alma en windows
 - `sudo vi eth0.nmconnection`
 - `sudo nano /etc/network/interfaces` (Wss deze)
