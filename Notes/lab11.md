@@ -611,7 +611,7 @@ On `companyrouter`:
 ```bash
 [vagrant@companyrouter ~]$ sudo openvpn /etc/openvpn/server/server.conf
 ```
-On `workathome`:
+On `workathome` (vagrant:vagrant):
 ```bash
 osboxes@osboxes:~$ sudo openvpn /etc/openvpn/client/client.conf
 ```

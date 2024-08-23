@@ -89,71 +89,95 @@ sudo iptables -P OUTPUT DROP
 ```
 ```
 [vagrant@companyrouter ~]$ sudo iptables -L INPUT -v -n && sudo iptables -L FORWARD -v -n && sudo iptables -L OUTPUT -v -n
-Chain INPUT (policy DROP 43 packets, 3096 bytes)
+Chain INPUT (policy DROP 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination
     0     0 ACCEPT     0    --  *      *       172.123.0.0/24       0.0.0.0/0
     0     0 ACCEPT     0    --  *      *       192.168.100.103      0.0.0.0/0
     0     0 ACCEPT     0    --  *      *       172.123.0.0/24       0.0.0.0/0
- 9254  693K ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+ 4372  272K ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
     0     0 ACCEPT     0    --  *      *       192.168.100.254      0.0.0.0/0
     0     0 ACCEPT     0    --  *      *       172.30.0.0/16        192.168.100.254
     0     0 ACCEPT     0    --  *      *       172.30.0.0/16        192.168.100.103
     0     0 ACCEPT     0    --  *      *       192.168.100.0/24     172.30.20.8
     0     0 ACCEPT     0    --  *      *       192.168.100.102      172.30.20.8
     0     0 ACCEPT     0    --  *      *       192.168.100.102      172.30.20.8
-    5   565 ACCEPT     0    --  *      *       172.30.0.0/16        172.30.0.0/16
+   33  3692 ACCEPT     0    --  *      *       172.30.0.0/16        172.30.0.0/16
     0     0 ACCEPT     0    --  *      *       172.30.20.0/24       172.30.0.0/24
     0     0 ACCEPT     0    --  *      *       172.30.20.8          172.30.0.4
     0     0 ACCEPT     0    --  *      *       172.30.0.0/16        0.0.0.0/0
-Chain FORWARD (policy DROP 38 packets, 2392 bytes)
+   42  3024 ACCEPT     0    --  *      *       192.168.100.1        0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       172.30.20.8          192.168.100.104
+    0     0 ACCEPT     0    --  *      *       192.168.100.104      172.30.20.8
+    0     0 ACCEPT     0    --  *      *       192.168.100.254      0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       192.168.100.253      0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       0.0.0.0/0            192.168.100.254
+Chain FORWARD (policy DROP 134 packets, 9000 bytes)
  pkts bytes target     prot opt in     out     source               destination
-14478 1997K DOCKER-USER  0    --  *      *       0.0.0.0/0            0.0.0.0/0
-14478 1997K DOCKER-ISOLATION-STAGE-1  0    --  *      *       0.0.0.0/0            0.0.0.0/0
+ 4645 3712K DOCKER-USER  0    --  *      *       0.0.0.0/0            0.0.0.0/0
+ 4645 3712K DOCKER-ISOLATION-STAGE-1  0    --  *      *       0.0.0.0/0            0.0.0.0/0
+
     0     0 ACCEPT     0    --  *      docker0  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
     0     0 DOCKER     0    --  *      docker0  0.0.0.0/0            0.0.0.0/0
     0     0 ACCEPT     0    --  docker0 !docker0  0.0.0.0/0            0.0.0.0/0
     0     0 ACCEPT     0    --  docker0 docker0  0.0.0.0/0            0.0.0.0/0
-    3   204 ACCEPT     0    --  *      *       192.168.100.254      172.30.0.0/24
-   19  1632 ACCEPT     0    --  *      *       192.168.100.254      172.30.20.0/24
+    0     0 ACCEPT     0    --  *      *       192.168.100.254      172.30.0.0/24
+    0     0 ACCEPT     0    --  *      *       192.168.100.254      172.30.20.0/24
     0     0 ACCEPT     0    --  *      *       192.168.100.254      172.30.100.0/24
     0     0 ACCEPT     0    --  *      *       172.30.100.0/24      192.168.100.254
-   10   840 ACCEPT     0    --  *      *       172.30.20.0/24       192.168.100.254
-    3   204 ACCEPT     0    --  *      *       172.30.0.0/24        192.168.100.254
+    0     0 ACCEPT     0    --  *      *       172.30.20.0/24       192.168.100.254
+    0     0 ACCEPT     0    --  *      *       172.30.0.0/24        192.168.100.254
     0     0 ACCEPT     0    --  *      *       192.168.100.103      0.0.0.0/0
     0     0 ACCEPT     0    --  *      *       172.123.0.0/24       0.0.0.0/0
-  971  604K ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+ 3992 3671K ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
     0     0 ACCEPT     0    --  *      *       192.168.100.254      0.0.0.0/0
     0     0 ACCEPT     0    --  *      *       172.30.0.0/16        192.168.100.254
     0     0 ACCEPT     0    --  *      *       172.30.0.0/16        192.168.100.103
-    1    60 ACCEPT     0    --  *      *       172.30.0.0/16        192.168.100.104
-    1    84 ACCEPT     0    --  *      *       192.168.100.104      172.30.0.0/16
+    0     0 ACCEPT     0    --  *      *       172.30.0.0/16        192.168.100.104
+    0     0 ACCEPT     0    --  *      *       192.168.100.104      172.30.0.0/16
     0     0 ACCEPT     0    --  *      *       172.30.0.0/16        172.123.0.0/24
-    2   168 ACCEPT     0    --  *      *       192.168.100.0/24     172.30.20.0/24
+    0     0 ACCEPT     0    --  *      *       192.168.100.0/24     172.30.20.0/24
     0     0 ACCEPT     0    --  *      *       192.168.100.0/24     172.30.20.8
     0     0 ACCEPT     0    --  *      *       192.168.100.102      172.30.20.8
-  304 18495 ACCEPT     0    --  *      *       172.30.0.0/16        172.30.0.0/16
+  360 21600 ACCEPT     0    --  *      *       172.30.0.0/16        172.30.0.0/16
     0     0 ACCEPT     0    --  *      *       172.30.0.0/16        192.168.100.0/24
-   19  1518 ACCEPT     0    --  *      *       0.0.0.0/0            10.0.2.0/24
+   47  3835 ACCEPT     0    --  *      *       0.0.0.0/0            10.0.2.0/24
     0     0 ACCEPT     0    --  *      *       10.0.2.0/24          0.0.0.0/0
-   28  1792 ACCEPT     0    --  *      *       172.30.0.0/16        0.0.0.0/0
-Chain OUTPUT (policy DROP 110 packets, 7482 bytes)
+   49  3316 ACCEPT     0    --  *      *       172.30.0.0/16        0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       192.168.100.1        0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       172.30.20.8          192.168.100.104
+    0     0 ACCEPT     0    --  *      *       192.168.100.104      172.30.20.8
+    0     0 ACCEPT     0    --  *      *       192.168.100.254      0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       192.168.100.253      0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       0.0.0.0/0            192.168.100.253
+    0     0 ACCEPT     0    --  *      *       192.168.100.104      192.168.100.254
+   23  1500 ACCEPT     0    --  *      *       10.8.0.6             0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       0.0.0.0/0            10.8.0.6
+Chain OUTPUT (policy DROP 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination
     0     0 ACCEPT     0    --  *      *       172.123.0.0/24       0.0.0.0/0
     0     0 ACCEPT     0    --  *      *       192.168.100.103      0.0.0.0/0
     0     0 ACCEPT     0    --  *      *       172.123.0.0/24       0.0.0.0/0
- 8667  901K ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+ 4699  534K ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
     0     0 ACCEPT     0    --  *      *       192.168.100.254      0.0.0.0/0
     0     0 ACCEPT     0    --  *      *       172.30.0.0/16        192.168.100.254
     0     0 ACCEPT     0    --  *      *       172.30.0.0/16        192.168.100.103
     0     0 ACCEPT     0    --  *      *       192.168.100.0/24     172.30.20.8
     0     0 ACCEPT     0    --  *      *       192.168.100.102      172.30.20.8
-    6   360 ACCEPT     0    --  *      *       172.30.0.0/16        0.0.0.0/0
+  244 14686 ACCEPT     0    --  *      *       172.30.0.0/16        0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       192.168.100.1        0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       172.30.20.8          192.168.100.104
+    0     0 ACCEPT     0    --  *      *       192.168.100.104      172.30.20.8
+    0     0 ACCEPT     0    --  *      *       192.168.100.254      0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       0.0.0.0/0            192.168.100.254
+   52  3992 ACCEPT     0    --  *      *       192.168.100.253      0.0.0.0/0
+    0     0 ACCEPT     0    --  *      *       0.0.0.0/0            192.168.100.253
 ```
 - `sudo apt install iptables-persistent`
 - `sudo systemctl start iptables`
 - `sudo systemctl enable iptables`
 - `sudo iptables-save > /etc/sysconfig/iptables`
 - `sudo iptables -L -v -n --line-numbers` (list all)
+- `sudo iptables -L INPUT -v -n && sudo iptables -L FORWARD -v -n && sudo iptables -L OUTPUT -v -n`
 - `sudo iptables -D INPUT 3` (delete)
 - `sudo iptables -A INPUT -s <IP_ADDRESS> -j ACCEPT` (add)
 
